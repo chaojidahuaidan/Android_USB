@@ -1,0 +1,4 @@
+#Sat Oct 10 18:30:06 CST 2020
+base.0=C\:\\Android\\AndroidProject\\USB_HOST\\app\\build\\intermediates\\dex\\release\\mergeDexRelease\\classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
