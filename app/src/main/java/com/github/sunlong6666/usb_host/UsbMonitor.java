@@ -11,7 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.util.HashMap;
 
-public class UsbMonitor extends BroadcastReceiver
+public class UsbMonitor extends BroadcastReceiver //继承USB广播对象
 {
 
     private static final String ACTION_USB_PERMISSION = "android.USB"; //USB设备的操作权限，可自定义
@@ -26,6 +26,7 @@ public class UsbMonitor extends BroadcastReceiver
      * 数据初始化
      * @param usbController usb控制器接口
      * @param context 上下文
+     * @param tv_usbDeviceDataShow USB信息数据展示控件
      */
     UsbMonitor(UsbController usbController,Context context,TextView tv_usbDeviceDataShow)
     {
