@@ -6,7 +6,12 @@ import android.hardware.usb.UsbManager;
 public interface UsbController
 {
 
-    //USB设备接入时的接口
+     /**
+     * USB设备接入时的接口
+     * @param usbMonitor USB监听广播对象
+     * @param usbManager USB状态、管理对象
+     * @param usbDevice USB设备对象
+     */
     void onDeviceInsert(UsbMonitor usbMonitor, UsbManager usbManager, UsbDevice usbDevice);
 
     //USB设备弹出时的接口
@@ -14,4 +19,5 @@ public interface UsbController
 
     //USB设备连接成功时的接口
     void onDeviceOpen(UsbMonitor usbMonitor, UsbManager usbManager, UsbDevice usbDevice);
+    
 }
