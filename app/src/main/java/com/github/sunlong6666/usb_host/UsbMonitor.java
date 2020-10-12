@@ -14,13 +14,13 @@ import java.util.HashMap;
 public class UsbMonitor extends BroadcastReceiver
 {
 
-    private static final String ACTION_USB_PERMISSION = "android.USB";
-    private int ID = 1241;
-    private UsbController usbController;
-    private UsbManager usbManager;
-    private UsbDevice usbDevice;
-    private Context context;
-    private TextView tv_usbDeviceDataShow;
+    private static final String ACTION_USB_PERMISSION = "android.USB"; //USB设备的操作权限，可自定义
+    private int ID = 1241; //USB设备生产厂商ID，用来区分选择目标USB设备，如果不是该ID的USB设备，不对其进行操作
+    private UsbController usbController; //USB动作管理接口
+    private UsbManager usbManager; //USB状态、管理对象
+    private UsbDevice usbDevice; //USB设备
+    private Context context; //上下文
+    private TextView tv_usbDeviceDataShow; //USB信息数据展示控件
 
     /**
      * 数据初始化
@@ -41,26 +41,26 @@ public class UsbMonitor extends BroadcastReceiver
     {
         if (this.context != null)
         {
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(ACTION_USB_PERMISSION);
-            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-            this.context.registerReceiver(this, intentFilter);
-            usbManager = (UsbManager)this.context.getSystemService(Context.USB_SERVICE);
+            IntentFilter intentFilter = new IntentFilter(); //意图过滤器
+            intentFilter.addAction(ACTION_USB_PERMISSION); //添加USB设备的操作权限意图
+            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED); //添加设备接入意图
+            intentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); //添加设备拔出意图
+            this.context.registerReceiver(this, intentFilter); //注册添加的意图
+            usbManager = (UsbManager)this.context.getSystemService(Context.USB_SERVICE); //获取USB设备管理
 
             if (usbManager != null)
             {
-                HashMap<String,UsbDevice> list = usbManager.getDeviceList();
-                for (UsbDevice usbDevice : list.values())
+                HashMap<String,UsbDevice> list = usbManager.getDeviceList(); //获取USB设备，返回的是 UsbDevice 的Hash列表，里面是所有当前连接主机的USB设备
+                for (UsbDevice usbDevice : list.values()) //遍历获取到的UsbDevice
                 {
-                    if (usbDevice.getVendorId() == ID)
+                    if (usbDevice.getVendorId() == ID) //找到目标USB设备
                     {
                         this.usbDevice = usbDevice;
-                        usbController.onDeviceInsert(this, usbManager,usbDevice);
+                        usbController.onDeviceInsert(this, usbManager,usbDevice); //执行USB接入时接口
                         break;
                     }
                 }
-                tv_usbDeviceDataShow.setText("不支持该设备");
+                tv_usbDeviceDataShow.setText("不支持该设备"); //如果列表里面没有目标USB设备，执行该操作
             }
 
         }
@@ -74,13 +74,13 @@ public class UsbMonitor extends BroadcastReceiver
     {
         if (usbManager != null)
         {
-            if (usbManager.hasPermission(usbDevice))
+            if (usbManager.hasPermission(usbDevice))//如果有该USB设备的操作权限
             {
-                usbController.onDeviceOpen(this,usbManager,usbDevice);
+                usbController.onDeviceOpen(this,usbManager,usbDevice);//连接USB设备（打开USB设备）
             }
             else
             {
-                usbManager.requestPermission(usbDevice,PendingIntent.getBroadcast(context, 666, new Intent(ACTION_USB_PERMISSION), 0));
+                usbManager.requestPermission(usbDevice,PendingIntent.getBroadcast(context, 666, new Intent(ACTION_USB_PERMISSION), 0));//如果没有USB操作权限则请求权限
             }
         }
     }
@@ -92,7 +92,7 @@ public class UsbMonitor extends BroadcastReceiver
     {
         if (context != null)
         {
-            context.unregisterReceiver(this);
+            context.unregisterReceiver(this); //注销USB设备广播监听
             context = null;
             usbManager = null;
             usbController = null;
@@ -109,25 +109,27 @@ public class UsbMonitor extends BroadcastReceiver
     {
         if (intent.getExtras() != null && !intent.getExtras().isEmpty())
         {
-            usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+            usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE); //获取意图中的USB设备
             switch(intent.getAction())
             {
-                case UsbManager.ACTION_USB_DEVICE_ATTACHED:
+                case UsbManager.ACTION_USB_DEVICE_ATTACHED: //USB设备接入
                     Toast.makeText(context, "设备接入", Toast.LENGTH_LONG).show();
-                    if (usbDevice.getVendorId() == ID) usbController.onDeviceInsert(this, usbManager,usbDevice);
-                    else tv_usbDeviceDataShow.setText("不支持该设备");
+                    if (usbDevice.getVendorId() == ID) usbController.onDeviceInsert(this, usbManager,usbDevice); //找到目标USB设备，执行USB设备接入时接口
+                    else tv_usbDeviceDataShow.setText("不支持该设备"); //未找到目标USB设备
                     break;
-                case UsbManager.ACTION_USB_DEVICE_DETACHED:
+                case UsbManager.ACTION_USB_DEVICE_DETACHED: //USB设备拔出
                     Toast.makeText(context, "设备断开", Toast.LENGTH_LONG).show();
-                    usbController.onDevicePullOut(this,usbManager,usbDevice);
+                    usbController.onDevicePullOut(this,usbManager,usbDevice); //执行USB设备拔出时接口
                     break;
-                case UsbMonitor.ACTION_USB_PERMISSION:
+                case UsbMonitor.ACTION_USB_PERMISSION: //请求USB设备操作权限
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))
                     {
-                        usbController.onDeviceOpen(this,usbManager,usbDevice);
+                        //同意USB权限
+                        usbController.onDeviceOpen(this,usbManager,usbDevice); //执行连接USB设备接口
                     }
                     else
                     {
+                        //拒绝USB权限
                         Toast.makeText(context, "拒绝USB权限！", Toast.LENGTH_LONG).show();
                     }
                     break;
@@ -138,6 +140,5 @@ public class UsbMonitor extends BroadcastReceiver
             Toast.makeText(this.context,"请检查USB设备！",Toast.LENGTH_LONG).show();
         }
     }
-
 
 }
