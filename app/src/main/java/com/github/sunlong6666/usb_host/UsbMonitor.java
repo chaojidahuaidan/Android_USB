@@ -63,7 +63,7 @@ public class UsbMonitor extends BroadcastReceiver //继承USB广播对象
                 }
                 tv_usbDeviceDataShow.setText("不支持该设备"); //如果列表里面没有目标USB设备，执行该操作
             }
-
+            tv_usbDeviceDataShow.setText("未连接设备"); //如果没有USB设备接入，执行该操作
         }
     }
 
