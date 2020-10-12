@@ -14,10 +14,10 @@ public interface UsbController
      */
     void onDeviceInsert(UsbMonitor usbMonitor, UsbManager usbManager, UsbDevice usbDevice);
 
-    //USB设备弹出时的接口
+    //USB设备拔出时的接口
     void onDevicePullOut(UsbMonitor usbMonitor, UsbManager usbManager, UsbDevice usbDevice);
 
-    //USB设备连接成功时的接口
+    //连接USB设备（打开USB设备）的接口
     void onDeviceOpen(UsbMonitor usbMonitor, UsbManager usbManager, UsbDevice usbDevice);
     
 }
