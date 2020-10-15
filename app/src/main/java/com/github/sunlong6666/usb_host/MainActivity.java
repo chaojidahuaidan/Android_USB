@@ -34,14 +34,15 @@ public class MainActivity extends AppCompatActivity implements UsbController
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initView();
-        initData();
+        initView(); //实例化当前页面控件
+        initData(); //加载初始数据
 
         m_bt_send.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
+                //开启新线程进行数据发送
                 new Thread(new Runnable()
                 {
                     @Override
