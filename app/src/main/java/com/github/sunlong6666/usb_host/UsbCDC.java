@@ -9,45 +9,47 @@ import android.os.Message;
 
 public class UsbCDC
 {
-    private boolean connect;
-    private UsbInterface usbInterface;
+    private boolean connect; //USB连接状态
+    private UsbInterface usbInterface; //USB设备的物理接口
 
-    //控制端点
+    //控制传输模式通道
     private UsbEndpoint controlUsbEndpoint;
-    //块输出端点
+    //块传输模式通道
     private UsbEndpoint bulkInUsbEndpoint;
     private UsbEndpoint bulkOutUsbEndpoint;
-    //中断端点
+    //中断传输模式通道
     private UsbEndpoint intInUsbEndpoint;
     private UsbEndpoint intOutUsbEndpoint;
 
-    private UsbDeviceConnection usbDeviceConnection;
+    private UsbDeviceConnection usbDeviceConnection; //USB设备连接链路，用来进行设备通讯
 
-    private Message mes;
+    private Message mes; //信息包
 
-    private MyHandler myHandler;
+    private MyHandler myHandler;//信息处理中心对象
     UsbCDC(MyHandler myHandler)
     {
         this.myHandler = myHandler;
     }
 
     /**
-     *
-     * @param message
-     * @return
+     * 向USB设备发送数据
+     * @param message 要发送的数据，字符串类型
+     * @return 数据发送结果，true代表发送成功
      */
     public boolean send(String message)
     {
-        if (this.usbDeviceConnection == null)
+        if (this.usbDeviceConnection == null) //判断USB链路是否获取到，不为空才能进行数据发送
         {
+            //如果USB链路为空，执行该作用域代码
             connect = false;
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
             return false;
         }
-        byte[] messageBytes = message.getBytes();
-        int result = usbDeviceConnection.bulkTransfer(bulkOutUsbEndpoint,messageBytes,messageBytes.length,100);
-        if ((result >= 0))
+        byte[] messageBytes = message.getBytes(); //字符串转为数组
+        int result = usbDeviceConnection.bulkTransfer(bulkOutUsbEndpoint,messageBytes,messageBytes.length,100);//发送数据，发送转换为数组后的数据，超时时间为100毫秒
+        if ((result >= 0)) //发送数据返回值大于等于0代表发送成功
         {
+            //向信息处理中心发送“发送成功”的信息，并将信息内容传递过去
             mes = new Message();
             mes.obj = new String(messageBytes);
             mes.what = MyHandler.OUTPUT;
@@ -56,6 +58,7 @@ public class UsbCDC
         }
         else
         {
+            //发送失败
             connect = false;
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
             return false;
@@ -63,32 +66,33 @@ public class UsbCDC
     }
 
     /**
-     *
-     * @return
+     * 接收数据
+     * @return 接收的数据内容
      */
     public String readData()
     {
         byte[] tempByte = new byte[1024];
-        if (usbDeviceConnection == null)
+        if (usbDeviceConnection == null) //判断USB连接链路是否为空，不为空才能进行数据接收
         {
             connect = false;
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
             return null;
         }
-        int i = usbDeviceConnection.bulkTransfer(bulkInUsbEndpoint,tempByte,tempByte.length,100);
-        if (i < 0)
+        int i = usbDeviceConnection.bulkTransfer(bulkInUsbEndpoint,tempByte,tempByte.length,100);//读取数据，100为超时时间，接收的数据为数组类型
+        if (i < 0) //小于0代表接收失败或未接收到数据，接收结果也受USB设备的影响
         {
             return null;
         }
+        //将接收的数组转为字符串并返回
         byte[] messageByte = new byte[i];
         System.arraycopy(tempByte,0, messageByte,0, i);
         return new String(messageByte);
     }
 
     /**
-     *
-     * @param paramInt
-     * @return
+     * 设置USB设备的波特率，方法内涉及算法等；在网上找的，就不写注释了，我也不太懂
+     * @param paramInt 要设置波特率的数值
+     * @return 设置结果，true代表设置成功
      */
     public boolean configUsb(int paramInt)
     {
@@ -122,25 +126,25 @@ public class UsbCDC
     }
 
     /**
-     *
-     * @param usbDevice
-     * @param usbDeviceConnection
+     * 获取收发数据的通道
+     * @param usbDevice USB设备
+     * @param usbDeviceConnection USB连接链路
      */
     public void openCDC(UsbDevice usbDevice, UsbDeviceConnection usbDeviceConnection)
     {
         this.usbDeviceConnection = usbDeviceConnection;
-        usbInterface = usbDevice.getInterface(findCDC(usbDevice));
-        if (usbDeviceConnection == null)
+        usbInterface = usbDevice.getInterface(findCDC(usbDevice)); //获取USB设备接口
+        if (usbDeviceConnection == null) //判断USB设备链路是否为空
         {
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
             return;
         }
-        if (!usbDeviceConnection.claimInterface(usbInterface,true))
+        if (!usbDeviceConnection.claimInterface(usbInterface,true)) //USB设备链路绑定获取到的接口
         {
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
             return;
         }
-        int numberEndpoints = usbInterface.getEndpointCount();
+        int numberEndpoints = usbInterface.getEndpointCount(); //获取USB设备接口的数据传输通道数量
         for (int num = 0; num <= numberEndpoints-1; num++)
         {
             UsbEndpoint usbEndpoint = usbInterface.getEndpoint(num);
