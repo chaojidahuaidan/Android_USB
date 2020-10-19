@@ -150,23 +150,23 @@ public class UsbCDC
             UsbEndpoint usbEndpoint = usbInterface.getEndpoint(num);
             switch (usbEndpoint.getType())
             {
-                //USB控制
+                //USB控制传输模式通道
                 case UsbConstants.USB_ENDPOINT_XFER_CONTROL:
                     controlUsbEndpoint = usbEndpoint;
                     break;
-                //USB传输
+                //USB块传输模式通道
                 case UsbConstants.USB_ENDPOINT_XFER_BULK:
                     switch (usbEndpoint.getDirection())
                     {
                         case UsbConstants.USB_DIR_OUT:
-                            bulkOutUsbEndpoint = usbEndpoint;
+                            bulkOutUsbEndpoint = usbEndpoint; //USB块传输模式输出通道
                             break;
                         case UsbConstants.USB_DIR_IN:
-                            bulkInUsbEndpoint = usbEndpoint;
+                            bulkInUsbEndpoint = usbEndpoint; //USB块传输模式输入通道
                             break;
                     }
                     break;
-                //USB中断
+                //USB中断传输模式通道
                 case UsbConstants.USB_ENDPOINT_XFER_INT:
                     switch (usbEndpoint.getDirection())
                     {
@@ -180,25 +180,28 @@ public class UsbCDC
                     break;
             }
         }
-        if (bulkOutUsbEndpoint != null && bulkInUsbEndpoint != null)
+        if (bulkOutUsbEndpoint != null && bulkInUsbEndpoint != null) //如果USB块传输模式输入输通道都不为空出
         {
+            //USB连接成功
             connect = true;
+            //获取到USB设备的ID、VID、PID
             String usbData = "Name:"+usbDevice.getDeviceName()+"\nID:"+usbDevice.getDeviceId()+"    VID:"+usbDevice.getVendorId()+"    PID:"+usbDevice.getProductId();
             mes = new Message();
             mes.obj = usbData;
             mes.what = MyHandler.USB_CONNECT_SUCCESS;
             myHandler.sendMessage(mes);
-            threadReadData.start();
+            threadReadData.start(); //开启接收数据线程
         }
         else
         {
+            //USB连接失败
             connect = false;
             myHandler.sendEmptyMessage(MyHandler.USB_CONNECT_FAILED);
         }
     }
 
     /**
-     *
+     * USB接收数据线程
      */
     private Thread threadReadData = new Thread(new Runnable()
     {
@@ -206,17 +209,19 @@ public class UsbCDC
         @Override
         public void run()
         {
-            while (connect)
+            while (connect) //USB处于连接状态就循环执行
             {
-                String temMes = readData();
-                if (temMes != null)
+                String temMes = readData(); //获取到接收到的字符串
+                if (temMes != null) 
                 {
+                    //如果接收到的数据不为空，就一直拼接，因为这些可能属于同一组数据（除非USB设备发送频率小于我们设置的超时时间100毫秒）
                     message = message+temMes;
                     continue;
                 }
                 else
                 {
-                    if (!message.equals(""))
+                    //接收到的数据为空了，表示该组数据接收完整了，就可以发送给消息处理中心进行处理了
+                    if (!message.equals("")) //接收到的数据要不为空，不然没意义
                     {
                         mes = new Message();
                         mes.obj = message;
@@ -230,31 +235,36 @@ public class UsbCDC
     });
 
     /**
-     *
-     * @param usbDevice
-     * @return
+     * 获取USB可以收发数据的接口号
+     * @param usbDevice USB设备
+     * @return USB可以收发数据的接口号
      */
     private int findCDC(UsbDevice usbDevice)
     {
-        int interfaceCount = usbDevice.getInterfaceCount();
+        int interfaceCount = usbDevice.getInterfaceCount(); //获取USB设备接口数量
         for (int count = 0; count < interfaceCount; ++count)
         {
+            //遍历获取到的接口进行判断是否为收发数据的接口，是就返回该接口号
             if (usbDevice.getInterface(count).getInterfaceClass() == UsbConstants.USB_CLASS_CDC_DATA)
             {
                 return count;
             }
         }
+        // 如果获取到的所有接口没有我们需要的就返回-1
         return -1;
     }
 
+     /**
+     * 关闭USB连接、链路、数据通道等
+     */
     public void close()
     {
-        connect = false;
-        usbDeviceConnection.releaseInterface(usbInterface);
-        usbDeviceConnection.close();
-        usbDeviceConnection = null;
-        bulkOutUsbEndpoint = null;
-        bulkInUsbEndpoint = null;
+        connect = false; //连接状态为false
+        usbDeviceConnection.releaseInterface(usbInterface); //USB设备链路解绑接口
+        usbDeviceConnection.close(); //关闭USB设备链路
+        usbDeviceConnection = null; //USB设备链路赋值为空
+        bulkOutUsbEndpoint = null; //输出通道赋值为空
+        bulkInUsbEndpoint = null; //输入通道赋值为空
     }
 
 }
